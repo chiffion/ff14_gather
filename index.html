@@ -3,51 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FF14 採集終極助手 (含版本篩選)</title>
+    <title>FF14 採集大師助手 (V9.完全補全版)</title>
     <style>
         :root {
             --bot: #78a55a; --min: #d4a017; --fish: #3498db; --bg: #121212; 
             --card: #1e1e1e; --active: #ff4757; --text: #e0e0e0; --fashion: #e84393;
         }
         body { font-family: -apple-system, "Microsoft JhengHei", sans-serif; background: var(--bg); color: var(--text); margin: 0; padding-bottom: 50px; }
-        
-        /* 固定標頭與篩選器 */
         .header-container { position: sticky; top: 0; background: #000; z-index: 1000; border-bottom: 2px solid var(--active); }
         .header { padding: 12px; display: flex; justify-content: space-between; align-items: center; }
         #lt-display { font-weight: bold; color: #74b9ff; font-size: 1.1rem; }
         #et-display { color: #f1c40f; font-size: 0.9rem; }
-        
-        .filter-bar { 
-            display: flex; overflow-x: auto; padding: 10px; gap: 8px; 
-            background: #1a1a1a; border-top: 1px solid #333;
-            scrollbar-width: none; /* Firefox */
-        }
-        .filter-bar::-webkit-scrollbar { display: none; /* Chrome/Safari */ }
-        
-        .filter-btn { 
-            white-space: nowrap; padding: 6px 15px; border-radius: 20px; 
-            background: #333; color: #ccc; border: none; font-size: 0.85rem; cursor: pointer;
-        }
+        .filter-bar { display: flex; overflow-x: auto; padding: 10px; gap: 8px; background: #1a1a1a; scrollbar-width: none; }
+        .filter-bar::-webkit-scrollbar { display: none; }
+        .filter-btn { white-space: nowrap; padding: 6px 15px; border-radius: 20px; background: #333; color: #ccc; border: none; font-size: 0.85rem; cursor: pointer; }
         .filter-btn.active { background: var(--active); color: white; font-weight: bold; }
-
         .container { padding: 10px; max-width: 650px; margin: auto; }
-        .group-title { font-size: 0.85rem; color: #888; margin: 15px 0 8px; display: flex; align-items: center; }
-        .group-title::after { content: ""; flex: 1; height: 1px; background: #333; margin-left: 10px; }
-
-        /* 卡片樣式 */
-        .card { background: var(--card); border-radius: 10px; padding: 12px; margin-bottom: 12px; border-left: 6px solid #444; position: relative; display: block; }
-        .card.hidden { display: none; }
-        .card.active { border-left-color: var(--active) !important; background: #2d1b1b; }
+        .card { background: var(--card); border-radius: 10px; padding: 12px; margin-bottom: 12px; border-left: 6px solid #444; position: relative; transition: 0.3s; }
+        .card.active { border-left-color: var(--active) !important; background: #2d1b1b; transform: scale(1.01); }
         .card.bot { border-left-color: var(--bot); }
         .card.min { border-left-color: var(--min); }
         .card.fsh { border-left-color: var(--fish); }
-
         .v-badge { position: absolute; right: 10px; top: 10px; font-size: 10px; background: #444; padding: 2px 6px; border-radius: 4px; }
-        .item-name { font-size: 1.1rem; font-weight: bold; color: #fff; margin-bottom: 5px; display: block; padding-right: 50px; }
-        .stats-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 5px 0; padding: 6px; background: rgba(0,0,0,0.4); border-radius: 4px; font-size: 0.85rem; }
+        .item-name { font-size: 1.1rem; font-weight: bold; color: #fff; margin-bottom: 5px; display: block; padding-right: 60px; }
+        .stats-row { display: flex; flex-wrap: wrap; gap: 10px; margin: 5px 0; padding: 8px; background: rgba(0,0,0,0.4); border-radius: 4px; font-size: 0.85rem; }
+        .stat-label { color: #bbb; }
         .stat-val { color: #f1c40f; font-weight: bold; }
         .reward-tag { color: var(--fashion); font-weight: bold; font-size: 0.9rem; margin-bottom: 5px; display: block; }
-        .use-tag { font-size: 0.75rem; color: #aaa; font-style: italic; margin-top: 4px; display: block; }
+        .use-tag { font-size: 0.75rem; color: #aaa; margin-top: 4px; display: block; }
         .time-hint { color: #74b9ff; font-weight: bold; margin-top: 10px; }
     </style>
 </head>
@@ -55,14 +38,11 @@
 
 <div class="header-container">
     <div class="header">
-        <div style="font-weight: bold;">FF14 採集大師助手</div>
-        <div style="text-align: right;">
-            <span id="lt-display">LT --:--:--</span>
-            <span id="et-display">ET --:--</span>
-        </div>
+        <div style="font-weight: bold;">FF14 採集助理 (V9.Full)</div>
+        <div style="text-align: right;"><span id="lt-display">LT --:--:--</span><br><span id="et-display">ET --:--</span></div>
     </div>
-    <div class="filter-bar" id="filter-bar">
-        <button class="filter-btn active" onclick="filterVersion('all', this)">全部顯示</button>
+    <div class="filter-bar">
+        <button class="filter-btn active" onclick="filterVersion('all', this)">全部</button>
         <button class="filter-btn" onclick="filterVersion('7.0', this)">7.0</button>
         <button class="filter-btn" onclick="filterVersion('6.0', this)">6.0</button>
         <button class="filter-btn" onclick="filterVersion('5.0', this)">5.0</button>
@@ -74,97 +54,78 @@
 
 <div class="container">
     <div id="radar-list">
-        <div class="card min" data-et="0" data-ver="7.0" data-name="黑星石 (收藏品)" data-map="奧高潘查" data-lv="100" data-g="4200" data-p="4000" data-slot="2" data-use="橙票"></div>
-        <div class="card bot" data-et="2" data-ver="7.0" data-name="阿卡夏原木 (收藏品)" data-map="赫利羅加" data-lv="100" data-g="4200" data-p="4000" data-slot="6" data-use="橙票"></div>
-        <div class="card min" data-et="2" data-ver="7.0" data-name="氧化鋁結晶 (傳說)" data-map="遺產之地" data-lv="100" data-g="4500" data-p="4200" data-slot="3" data-use="7.0製作"></div>
-        <div class="card min" data-et="6" data-ver="7.0" data-name="雷公石 (傳說)" data-map="遺產之地" data-lv="100" data-g="4500" data-p="4200" data-slot="4" data-use="7.0製作"></div>
-        <div class="card bot" data-et="8" data-ver="7.0" data-name="鮮龍血樹樹脂 (傳說)" data-map="赫利羅加" data-lv="100" data-g="4500" data-p="4200" data-slot="4" data-use="7.0製作"></div>
+        <div class="card min" data-et="0" data-ver="7.0" data-name="黑星石 (收藏品)" data-map="奧高潘查" data-lv="100" data-g="4200" data-p="4000" data-slot="2" data-use="橙票/靈砂材料"></div>
+        <div class="card bot" data-et="2" data-ver="7.0" data-name="阿卡夏原木 (收藏品)" data-map="赫利羅加" data-lv="100" data-g="4200" data-p="4000" data-slot="6" data-use="橙票兌換"></div>
+        <div class="card min" data-et="2" data-ver="7.0" data-name="氧化鋁結晶 (傳說)" data-map="遺產之地" data-lv="100" data-g="4500" data-p="4200" data-slot="3" data-use="7.0 高難製作裝備材料"></div>
+        <div class="card min" data-et="6" data-ver="7.0" data-name="雷公石 (傳說)" data-map="遺產之地" data-lv="100" data-g="4500" data-p="4200" data-slot="4" data-use="7.0 高難製作裝備材料"></div>
+        <div class="card bot" data-et="8" data-ver="7.0" data-name="鮮龍血樹樹脂 (傳說)" data-map="赫利羅加" data-lv="100" data-g="4500" data-p="4200" data-slot="4" data-use="7.0 高難製作裝備材料"></div>
+        <div class="card fsh" data-et="0" data-dur="24" data-ver="7.0" data-name="幻影角魚" data-map="赫利羅加" data-lv="100" data-bait="蜜蜂" data-use="精選：幻島靈砂 (7.0 藥水材料)"></div>
 
-        <div class="card min" data-et="10" data-ver="6.0" data-name="盧恩金礦 (傳說)" data-map="嘆息海" data-lv="90" data-g="3600" data-p="3600" data-slot="3"></div>
-        <div class="card bot" data-et="6" data-ver="6.0" data-name="月見草 (傳說)" data-map="嘆息海" data-lv="90" data-g="3600" data-p="3600" data-slot="2"></div>
+        <div class="card min" data-et="10" data-ver="6.0" data-name="盧恩金礦 (傳說)" data-map="嘆息海" data-lv="90" data-g="3600" data-p="3600" data-slot="3" data-use="6.0 高難裝備/發光武器"></div>
+        <div class="card bot" data-et="6" data-ver="6.0" data-name="月見草 (傳說)" data-map="嘆息海" data-lv="90" data-g="3600" data-p="3600" data-slot="2" data-use="6.0 高難製作材料"></div>
+        <div class="card fsh" data-et="0" data-dur="24" data-ver="6.0" data-name="阿爾凱恩角龍" data-map="厄爾庇斯" data-lv="90" data-bait="美考幼蟲" data-use="精選：月亮靈砂 (發光武器關鍵材料)"></div>
 
         <div class="card min" data-et="0" data-ver="5.0" data-name="闇銀礦 (傳說)" data-map="黑風海" data-lv="80" data-g="2000" data-p="2000" data-slot="1"></div>
         <div class="card bot" data-et="2" data-ver="5.0" data-name="檀香木原木 (傳說)" data-map="拉凱提卡" data-lv="80" data-g="2000" data-p="2000" data-slot="6"></div>
+        <div class="card min" data-et="2" data-ver="5.0" data-name="鎢鐵礦 (傳說)" data-map="珂露西亞島" data-lv="80" data-g="2000" data-p="2000" data-slot="3"></div>
+        <div class="card fsh" data-et="0" data-dur="24" data-ver="5.0" data-name="空棘魚" data-map="黑風海" data-lv="80" data-bait="魷魚絲" data-fashion="分解：5.0 特效家具材料"></div>
 
-        <div class="card min" data-et="4" data-ver="4.0" data-name="金礦" data-map="延夏" data-lv="70" data-g="1200" data-p="1200" data-slot="6"></div>
+        <div class="card min" data-et="4" data-ver="4.0" data-name="金礦 (重要)" data-map="延夏" data-lv="70" data-g="1200" data-p="1200" data-slot="6"></div>
+        <div class="card bot" data-et="12" data-ver="4.0" data-name="蓮花" data-map="延夏" data-lv="70" data-g="1200" data-p="1200" data-slot="4"></div>
+        <div class="card min" data-et="18" data-ver="4.0" data-name="真龍晶石" data-map="基拉巴尼亞湖區" data-lv="70" data-g="1200" data-p="1200" data-slot="7"></div>
+        <div class="card fsh" data-et="0" data-dur="24" data-ver="4.0" data-name="貪婪浪客" data-map="紅玉海" data-lv="70" data-bait="活蝦" data-fashion="分解：東方風格珍稀家具"></div>
 
         <div class="card min" data-et="12" data-ver="3.0" data-name="皇金礦" data-map="阿巴拉提亞雲海" data-lv="60" data-g="800" data-p="800" data-slot="6"></div>
+        <div class="card bot" data-et="22" data-ver="3.0" data-name="大龍膽" data-map="龍堡內陸低地" data-lv="60" data-g="800" data-p="800" data-slot="1"></div>
+        <div class="card fsh" data-et="0" data-dur="24" data-ver="3.0" data-name="亞拉戈高地斗魚" data-map="旗艦島" data-lv="60" data-bait="藍天魚(小釣大)" data-fashion="時裝：明亮短衣 (東方風)"></div>
+        <div class="card fsh" data-et="0" data-dur="24" data-ver="3.0" data-name="破雲飛魚" data-map="阿巴拉提亞雲海" data-lv="60" data-bait="紅蟲" data-fashion="寵物：微型靈峰 (飛龍)"></div>
 
-        <div class="card fsh" data-et="9" data-dur="6" data-ver="2.0" data-name="巨大章魚" data-map="東拉諾西亞" data-lv="50" data-bait="磷蝦海蟲" data-fashion="南洋風草帽 / 泳裝"></div>
-        <div class="card fsh" data-et="6" data-dur="5" data-ver="2.0" data-name="奧土修斯" data-map="西拉諾西亞" data-lv="50" data-bait="浮游蟲 > 梭子魚(小釣大)" data-fashion="海邊男式泳褲"></div>
-        <div class="card fsh" data-et="17" data-dur="3" data-ver="2.0" data-name="凱龍" data-map="東拉諾西亞" data-lv="50" data-bait="重型鋼鐵誘餌" data-fashion="南洋風女式背心"></div>
+        <div class="card bot" data-et="13" data-ver="2.0" data-name="黑松露 (限時)" data-map="東部森林" data-lv="50" data-g="400" data-p="400" data-slot="7"></div>
+        <div class="card min" data-et="17" data-ver="2.0" data-name="生靈銀礦 (限時)" data-map="南薩納蘭" data-lv="50" data-g="400" data-p="400" data-slot="2"></div>
+        <div class="card fsh" data-et="9" data-dur="6" data-ver="2.0" data-name="巨大章魚" data-map="東拉諾西亞" data-lv="50" data-bait="磷蝦海蟲" data-fashion="時裝：南洋風草帽、泳裝"></div>
+        <div class="card fsh" data-et="6" data-dur="5" data-ver="2.0" data-name="奧土修斯" data-map="西拉諾西亞" data-lv="50" data-bait="梭子魚(小釣大)" data-fashion="時裝：海邊男式泳褲"></div>
+        <div class="card fsh" data-et="17" data-dur="3" data-ver="2.0" data-name="凱龍" data-map="太陽海岸" data-lv="50" data-bait="重型鋼鐵誘餌" data-fashion="時裝：南洋風女式背心"></div>
+        <div class="card fsh" data-et="16" data-dur="5" data-ver="2.0" data-name="巨型淡水劍魚" data-map="枯骨營地" data-lv="50" data-bait="西拉得小魚(小釣大)" data-fashion="時裝：南洋風男式背心"></div>
+        <div class="card fsh" data-et="10" data-dur="4" data-ver="2.0" data-name="巨型變色龍" data-map="庫爾札斯中央" data-lv="50" data-bait="雲海青蛙" data-fashion="時裝：耐熱裝備券"></div>
     </div>
 </div>
 
 <script>
-    const EORZEA_RATIO = 144 / 7;
-    let currentFilter = 'all';
-
-    function filterVersion(ver, btn) {
-        currentFilter = ver;
-        // 更新按鈕樣式
-        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        update(); // 觸發即時更新
-    }
-
+    const EORZEA_RATIO = 144 / 7; let currentFilter = 'all';
+    function filterVersion(ver, btn) { currentFilter = ver; document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); update(); }
     function update() {
         const now = new Date();
         document.getElementById('lt-display').textContent = "LT " + now.toLocaleTimeString('zh-TW', {hour12: false});
         const etSeconds = Math.floor(now.getTime() * EORZEA_RATIO / 1000);
-        const etMinute = Math.floor((etSeconds / 60) % 60);
         const etHour = Math.floor((etSeconds / 3600) % 24);
-        document.getElementById('et-display').textContent = `ET ${String(etHour).padStart(2, '0')}:${String(etMinute).padStart(2, '0')}`;
-
-        const cards = Array.from(document.querySelectorAll('.card'));
+        const etMinute = Math.floor((etSeconds / 60) % 60);
+        document.getElementById('et-display').textContent = `ET ${String(etHour).padStart(2,'0')}:${String(etMinute).padStart(2,'0')}`;
         const radarList = document.getElementById('radar-list');
+        const cards = Array.from(document.querySelectorAll('.card'));
         let sorted = [];
-
-        cards.forEach((card) => {
-            // 篩選邏輯
-            const cardVer = card.dataset.ver;
-            if (currentFilter !== 'all' && currentFilter !== cardVer) {
-                card.style.display = 'none';
-                return;
-            } else {
-                card.style.display = 'block';
-            }
-
-            const start = parseInt(card.dataset.et);
-            const dur = card.dataset.dur ? parseInt(card.dataset.dur) : 2;
-            const end = (start + dur) % 24;
-            let diffEt = start - etHour;
-            if (diffEt < 0) diffEt += 24;
-            const remainLt = Math.floor(((diffEt * 60) - etMinute) / EORZEA_RATIO);
-            const nextLt = new Date(now.getTime() + remainLt * 60000);
-            let isActive = (start < end) ? (etHour >= start && etHour < end) : (etHour >= start || etHour < end);
-            
+        cards.forEach(card => {
+            if (currentFilter !== 'all' && card.dataset.ver !== currentFilter) { card.style.display = 'none'; return; }
+            card.style.display = 'block';
+            const start = parseInt(card.dataset.et); const dur = card.dataset.dur ? parseInt(card.dataset.dur) : 2;
+            let diff = start - etHour; if (diff < 0) diff += 24;
+            const remainLt = Math.floor(((diff * 60) - etMinute) / EORZEA_RATIO);
+            const isActive = (etHour >= start && etHour < (start + dur) % 24) || (start + dur > 24 && (etHour >= start || etHour < (start + dur) % 24));
             card.classList.toggle('active', isActive);
-            const typeLabel = card.classList.contains('fsh') ? '🎣' : (card.classList.contains('min') ? '⛏️' : '🌿');
-            
-            card.innerHTML = `
-                <span class="v-badge">Ver ${card.dataset.ver}</span>
-                ${card.dataset.fashion ? `<span class="reward-tag">✨ 分解：${card.dataset.fashion}</span>` : ''}
-                <span class="item-name">${typeLabel} ${card.dataset.name} <small>(Lv ${card.dataset.lv})</small></span>
-                <div class="stats-row">
-                    ${card.dataset.bait ? `<span>餌料: <span class="stat-val">${card.dataset.bait}</span></span>` 
-                    : `<span>獲得力: <span class="stat-val">${card.dataset.g}</span></span> <span>觀察力: <span class="stat-val">${card.dataset.p}</span></span>`}
-                    <span>📍 ${card.dataset.map}</span>
-                </div>
-                ${card.dataset.use ? `<span class="use-tag">用途：${card.dataset.use}</span>` : ''}
-                <div class="time-hint">${isActive ? '🔥 正在開放中！' : '🕒 預計 LT ' + nextLt.getHours().toString().padStart(2,'0') + ':' + nextLt.getMinutes().toString().padStart(2,'0')}</div>
-            `;
+            const isFsh = card.classList.contains('fsh');
+            let statsHtml = isFsh 
+                ? `<span><span class="stat-label">餌料:</span> <span class="stat-val">${card.dataset.bait}</span></span>`
+                : `<span><span class="stat-label">獲得:</span> <span class="stat-val">${card.dataset.g}</span></span><span><span class="stat-label">觀察:</span> <span class="stat-val">${card.dataset.p}</span></span>`;
+            card.innerHTML = `<span class="v-badge">Ver ${card.dataset.ver}</span>
+                ${card.dataset.fashion ? `<span class="reward-tag">✨ ${card.dataset.fashion}</span>` : ''}
+                <span class="item-name">${isFsh?'🎣':(card.classList.contains('min')?'⛏️':'🌿')} ${card.dataset.name}</span>
+                <div class="stats-row">${statsHtml}<span><span class="stat-label">📍</span> ${card.dataset.map} ${card.dataset.slot ? `| ${card.dataset.slot}格` : ''}</span></div>
+                <span class="use-tag">${card.dataset.use || '版本關鍵資源/限時節點'}</span>
+                <div class="time-hint">${isActive ? '🔥 開放中！' : '🕒 預計 LT ' + new Date(now.getTime() + remainLt*60000).getHours() + ':' + String(new Date(now.getTime() + remainLt*60000).getMinutes()).padStart(2,'0')}</div>`;
             sorted.push({ el: card, active: isActive, remain: remainLt });
         });
-
-        // 僅對顯示中的卡片進行排序
-        const visibleSorted = sorted.filter(s => s.el.style.display === 'block');
-        visibleSorted.sort((a, b) => a.active === b.active ? a.remain - b.remain : (a.active ? -1 : 1));
-        visibleSorted.forEach(item => radarList.appendChild(item.el));
+        sorted.filter(s => s.el.style.display === 'block').sort((a,b) => a.active === b.active ? a.remain - b.remain : (a.active ? -1 : 1)).forEach(i => radarList.appendChild(i.el));
     }
-
-    setInterval(update, 2000);
-    update();
+    setInterval(update, 2000); update();
 </script>
 </body>
 </html>
